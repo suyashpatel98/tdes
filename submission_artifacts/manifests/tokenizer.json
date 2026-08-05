@@ -1,0 +1,1 @@
+{"spec":{"byte_offset":6,"byte_values":256,"normalization":"none_after_corpus_cleaning","schema_version":1,"special_tokens":{"BOS":1,"EOS":2,"PAD":0,"PROMPT":3,"RESPONSE":4,"UNK":5},"type":"utf8_bytes","vocab_size":262},"tokenizer_hash":"d31b8d7388ceae80ac5fda507c2e58ed60f5c9955fd4c2c05832b2970907f147"}

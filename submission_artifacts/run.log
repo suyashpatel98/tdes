@@ -1,0 +1,49 @@
+[2026-08-04T23:58:04.392+00:00] [PASS] demo_started
+[2026-08-04T23:58:04.520+00:00] [PASS] documents_cleaned count=82 source_bytes=13343489 hash=429dde85800bf0876e7f003821a3d4d97c518348655b565ebb36820a6dd4797e
+[2026-08-04T23:58:04.529+00:00] [PASS] shards_created count=6 root_hash=eb1f61f8af4b3da2f2c3539c736a3199abdac6cf3cff0ae4ba6289f4e9579411
+[2026-08-04T23:58:04.533+00:00] [PASS] tokenizer_hash_verified hash=d31b8d7388ceae80ac5fda507c2e58ed60f5c9955fd4c2c05832b2970907f147
+[2026-08-04T23:58:04.533+00:00] [PASS] manifests_validated count=6
+[2026-08-04T23:58:04.534+00:00] [PASS] eval_shard_blocked shard=eval-general-document-df5b7a3965aacb15
+[2026-08-04T23:58:04.534+00:00] [PASS] validation_and_proxy_shards_blocked
+[2026-08-04T23:58:04.535+00:00] [PASS] mixture_compiled stages=2 hash=f4a7e67fcc79265c512a6a79326dfa3aa1e247ea8a59c60807383a964b100e03
+[2026-08-04T23:58:04.592+00:00] [PASS] checkpoint_saved branch=main next_step=0 hash=594cc59daba821aeead330964dd2d95176bee8a960e1dc745c6e52914eba74f9 path=checkpoints/main.bootstrap.json
+[2026-08-04T23:58:04.592+00:00] [PASS] training_started branch=main
+[2026-08-04T23:58:04.904+00:00] [PASS] opus_decisions_recorded step=0 dispositions=accepted,deferred
+[2026-08-04T23:58:05.164+00:00] [PASS] checkpoint_saved branch=main next_step=1 hash=1c5e0b6ca32d0e24c5fd0f5c0779ca6966014c0e16e723520d2be1a9e50742b7 path=checkpoints/main.step-0000.json
+[2026-08-04T23:58:05.165+00:00] [PASS] batch_trained branch=main step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
+[2026-08-04T23:58:05.494+00:00] [PASS] opus_decisions_recorded step=1 dispositions=accepted,deferred,rejected
+[2026-08-04T23:58:05.834+00:00] [PASS] checkpoint_saved branch=main next_step=2 hash=3426c508691b9106f5a0d5fe26e46ad0b9e34561cbd91323a462324bac103650 path=checkpoints/main.step-0001.json
+[2026-08-04T23:58:05.834+00:00] [PASS] batch_trained branch=main step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
+[2026-08-04T23:58:06.221+00:00] [PASS] opus_decisions_recorded step=2 dispositions=accepted,deferred,protected_floor_override,rejected
+[2026-08-04T23:58:06.586+00:00] [PASS] checkpoint_saved branch=main next_step=3 hash=8e6d147ef14ecf785efe0ec4f8ab7d17d3e0bf6410bf1ecac0366c63b17383f6 path=checkpoints/main.step-0002.json
+[2026-08-04T23:58:06.586+00:00] [PASS] batch_trained branch=main step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
+[2026-08-04T23:58:06.990+00:00] [PASS] crash_simulated exit_code=86 checkpoint=main.step-0002.json expected_batch=batch-4f7891bdf6d93683c3a3
+[2026-08-04T23:58:06.993+00:00] [PASS] crash_worker_exit_verified exit_code=86
+[2026-08-04T23:58:07.112+00:00] [PASS] run_resumed checkpoint=main.step-0002.json next_step=3
+[2026-08-04T23:58:07.456+00:00] [PASS] resume_next_batch_matched step=3 batch_id=batch-4f7891bdf6d93683c3a3 hash=4f7891bdf6d93683c3a34295024c49fb61a820d063fee51f3d345614970e3709
+[2026-08-04T23:58:07.808+00:00] [PASS] checkpoint_saved branch=main next_step=4 hash=70475512e69b6a42600a98b21345d84e50717bfcbbe0eb3244d01c366fb84a82 path=checkpoints/main.step-0003.json
+[2026-08-04T23:58:07.808+00:00] [PASS] batch_trained branch=main step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
+[2026-08-04T23:58:08.434+00:00] [PASS] checkpoint_saved branch=main next_step=5 hash=e79f14203210a349962cb9300b2784cc037621a514c4c1d57eecb31e5ac6baa2 path=checkpoints/main.step-0004.json
+[2026-08-04T23:58:08.434+00:00] [PASS] batch_trained branch=main step=4 batch_id=batch-41f0819b2eaadfcf4f61 loss=5.400148
+[2026-08-04T23:58:09.095+00:00] [PASS] checkpoint_saved branch=main next_step=6 hash=f301c5051550fafced6f1ea1995117550e51e0bc40888096f78012510668803a path=checkpoints/main.step-0005.json
+[2026-08-04T23:58:09.096+00:00] [PASS] batch_trained branch=main step=5 batch_id=batch-1f0654be6610c2a16618 loss=5.406130
+[2026-08-04T23:58:09.097+00:00] [PASS] main_training_completed steps=6
+[2026-08-04T23:58:09.105+00:00] [PASS] batches_packed_and_training_resumed
+[2026-08-04T23:58:09.614+00:00] [PASS] batch_trained branch=replay step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
+[2026-08-04T23:58:10.146+00:00] [PASS] batch_trained branch=replay step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
+[2026-08-04T23:58:10.757+00:00] [PASS] batch_trained branch=replay step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
+[2026-08-04T23:58:11.256+00:00] [PASS] batch_trained branch=replay step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
+[2026-08-04T23:58:11.409+00:00] [PASS] checkpoint_saved branch=replay next_step=4 hash=9fbd273549d26a87c66aec14c80d1757bc7efee19b333ee5cbe88bfdf3e579a4 path=checkpoints/replay.final.json
+[2026-08-04T23:58:11.410+00:00] [PASS] replay_hash_matched interval=[0, 3] batches=4
+[2026-08-04T23:58:11.416+00:00] [PASS] historical_stream_replayed
+[2026-08-04T23:58:11.688+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=1 hash=363571bd8ff7be0dc7016f59fcffee586cca8bb844cd86f4033eb844fdbaf4e3 path=checkpoints/fork.bootstrap.json
+[2026-08-04T23:58:12.368+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=2 hash=756ab6ac798949cb885799bdbbe8bb765f1529045040c78abc09861953f89fab path=checkpoints/fork.step-0001.json
+[2026-08-04T23:58:12.369+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=1 batch_id=batch-ba39d87069961326d468 loss=5.537445
+[2026-08-04T23:58:13.052+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=3 hash=78329d72465e688f3494677e71779513a8151e9d655017d42c4bae4069039654 path=checkpoints/fork.step-0002.json
+[2026-08-04T23:58:13.053+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=2 batch_id=batch-03b53a31610d6975a92b loss=5.504628
+[2026-08-04T23:58:13.056+00:00] [PASS] branch_forked branch=fork-temperature-mixture parent=main fork_step=1 diverged=True
+[2026-08-04T23:58:13.063+00:00] [PASS] branch_fork_execution_completed
+[2026-08-04T23:58:13.262+00:00] [PASS] audit_completed checks=10 hash=5cd194cd4932117dd2dac3a450e0f67964bdd2d9b7317e96e02e228fbcb06c00
+[2026-08-04T23:58:13.262+00:00] [PASS] performance_measured utilization=0.757812 useful_tokens_per_second=233.30
+[2026-08-04T23:58:13.262+00:00] [PASS] evidence_generated hash=ee7d6cee98abdb4e18456245714fa9f4368adce46d456fd36326fbf156a47937
+[2026-08-04T23:58:13.262+00:00] [PASS] demo_completed

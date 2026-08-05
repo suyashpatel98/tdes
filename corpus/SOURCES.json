@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "alice_in_wonderland_gutenberg_11",
+      "path": "raw/alice_in_wonderland.txt",
+      "url": "https://www.gutenberg.org/cache/epub/11/pg11.txt",
+      "license": "Project Gutenberg License; public-domain status in the United States",
+      "license_path": "raw/alice_in_wonderland.txt",
+      "bytes": 174311,
+      "sha256": "01b38ea4c710a84bc18d0bd41271a5a1a92b94e97b2812f4dece97d4a694725e"
+    },
+    {
+      "id": "cpython_statistics_3_13_0",
+      "path": "raw/cpython_statistics.py",
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.0/Lib/statistics.py",
+      "license": "Python Software Foundation License Version 2",
+      "license_path": "raw/cpython_LICENSE.txt",
+      "bytes": 61831,
+      "sha256": "0f618d7c13e99f5289d5e2a20ba8b7340be27ab424f2bffb739ab3be291fe261"
+    },
+    {
+      "id": "databricks_dolly_15k",
+      "path": "raw/dolly.jsonl",
+      "url": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/main/databricks-dolly-15k.jsonl",
+      "license": "Creative Commons Attribution-ShareAlike 3.0 Unported",
+      "license_path": "raw/dolly_README.md",
+      "bytes": 13085339,
+      "sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec"
+    }
+  ],
+  "supporting_files": [
+    {
+      "path": "raw/cpython_LICENSE.txt",
+      "bytes": 13809,
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+    },
+    {
+      "path": "raw/dolly_README.md",
+      "bytes": 8199,
+      "sha256": "db06c60090a11b20e79d1933b2f316f781605f07761ff2ae2795d6523e3e960b"
+    }
+  ]
+}

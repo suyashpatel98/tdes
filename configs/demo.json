@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "seed": 1847,
+  "sequence_length": 64,
+  "candidate_buffer_size": 6,
+  "selection_ratio": 0.5,
+  "proxy_batch_size": 2,
+  "projection_dimension": 64,
+  "opus_temperature": 0.35,
+  "max_deferrals": 1,
+  "total_steps": 6,
+  "crash_after_step": 2,
+  "microbatch_size": 1,
+  "world_size": 1,
+  "gradient_accumulation_steps": 3,
+  "model": {
+    "learning_rate": 0.025,
+    "beta1": 0.9,
+    "beta2": 0.98,
+    "epsilon": 1e-8,
+    "weight_decay": 0.0001
+  },
+  "stages": [
+    {
+      "name": "foundation",
+      "start_step": 0,
+      "end_step": 3,
+      "lane_weights": {
+        "general": 0.55,
+        "instruction": 0.30,
+        "code": 0.15
+      },
+      "protected_floors": {
+        "code": 0.20
+      }
+    },
+    {
+      "name": "reasoning",
+      "start_step": 3,
+      "end_step": 6,
+      "lane_weights": {
+        "general": 0.30,
+        "instruction": 0.35,
+        "code": 0.35
+      },
+      "protected_floors": {
+        "code": 0.20
+      }
+    }
+  ],
+  "corpus": {
+    "general_records": 24,
+    "code_records": 18,
+    "instruction_records": 24,
+    "proxy_records": 8,
+    "validation_records": 4,
+    "eval_records": 4
+  }
+}
