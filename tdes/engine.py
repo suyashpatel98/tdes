@@ -122,10 +122,20 @@ class TrainingEngine:
     ) -> tuple["TrainingEngine", dict[str, Any]]:
         checkpoint = load_checkpoint(checkpoint_path)
         payload = checkpoint["payload"]
-        if payload["tokenizer_hash"] != FrozenByteTokenizer.create().tokenizer_hash:
+        runtime_tokenizer = FrozenByteTokenizer.create()
+        if payload["tokenizer_hash"] != runtime_tokenizer.tokenizer_hash:
             raise ValueError("checkpoint tokenizer hash does not match runtime")
         if payload["code_hash"] != code_hash:
             raise ValueError("checkpoint code hash does not match runtime")
+        # Validate the complete repository before ledger reconciliation can mutate files.
+        runtime_repository = ShardRepository(artifacts, runtime_tokenizer)
+        if (
+            payload["root_manifest_hash"]
+            != runtime_repository.root["root_manifest_hash"]
+        ):
+            raise ValueError(
+                "checkpoint root manifest hash does not match runtime repository"
+            )
         branch_id = branch_override or payload["branch_id"]
         if branch_override is None and payload["config_hash"] != config_hash:
             raise ValueError("checkpoint config hash does not match runtime")

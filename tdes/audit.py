@@ -326,6 +326,9 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
         payload = checkpoint["payload"]
         if payload["next_step"] != crash_step + 1:
             raise ValueError("crash checkpoint next step mismatch")
+        root_manifest = read_json(artifacts / "manifests" / "root.json")
+        if payload["root_manifest_hash"] != root_manifest["root_manifest_hash"]:
+            raise ValueError("checkpoint root manifest does not match audited repository")
         for name, expected in payload["ledger_states"].items():
             final_rows = read_jsonl(artifacts / "ledgers" / f"main.{name}.jsonl")
             if len(final_rows) < expected["rows"]:
