@@ -1,49 +1,52 @@
-[2026-08-07T22:28:46.802+00:00] [PASS] demo_started
-[2026-08-07T22:28:46.962+00:00] [PASS] documents_cleaned count=82 source_bytes=13343489 hash=429dde85800bf0876e7f003821a3d4d97c518348655b565ebb36820a6dd4797e
-[2026-08-07T22:28:46.973+00:00] [PASS] shards_created count=6 root_hash=eb1f61f8af4b3da2f2c3539c736a3199abdac6cf3cff0ae4ba6289f4e9579411
-[2026-08-07T22:28:46.978+00:00] [PASS] tokenizer_hash_verified hash=d31b8d7388ceae80ac5fda507c2e58ed60f5c9955fd4c2c05832b2970907f147
-[2026-08-07T22:28:46.978+00:00] [PASS] manifests_validated count=6
-[2026-08-07T22:28:46.979+00:00] [PASS] eval_shard_blocked shard=eval-general-document-df5b7a3965aacb15
-[2026-08-07T22:28:46.979+00:00] [PASS] validation_and_proxy_shards_blocked
-[2026-08-07T22:28:46.980+00:00] [PASS] mixture_compiled stages=2 hash=f4a7e67fcc79265c512a6a79326dfa3aa1e247ea8a59c60807383a964b100e03
-[2026-08-07T22:28:47.065+00:00] [PASS] checkpoint_saved branch=main next_step=0 hash=92d10b6a92ca2c557fa91643fead2d049fcadf653a3511216667d37451a11268 path=checkpoints/main.bootstrap.json
-[2026-08-07T22:28:47.065+00:00] [PASS] training_started branch=main
-[2026-08-07T22:28:47.375+00:00] [PASS] opus_decisions_recorded step=0 dispositions=accepted,deferred
-[2026-08-07T22:28:47.644+00:00] [PASS] checkpoint_saved branch=main next_step=1 hash=9be86a053834d9f2d4a521fdde777b3522d343544ba9b3b0dd0ca126d3daaf0b path=checkpoints/main.step-0000.json
-[2026-08-07T22:28:47.645+00:00] [PASS] batch_trained branch=main step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
-[2026-08-07T22:28:47.995+00:00] [PASS] opus_decisions_recorded step=1 dispositions=accepted,deferred,rejected
-[2026-08-07T22:28:48.352+00:00] [PASS] checkpoint_saved branch=main next_step=2 hash=6eb57c8cda13f8374469c9fb602eeea965c7a0d553c963e0d31eaaab081e5474 path=checkpoints/main.step-0001.json
-[2026-08-07T22:28:48.352+00:00] [PASS] batch_trained branch=main step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
-[2026-08-07T22:28:48.754+00:00] [PASS] opus_decisions_recorded step=2 dispositions=accepted,deferred,protected_floor_override,rejected
-[2026-08-07T22:28:49.165+00:00] [PASS] checkpoint_saved branch=main next_step=3 hash=2fc16da97a9f759178453d1896c3404e00146dd09c9a17a4d979a8a7e3d373c9 path=checkpoints/main.step-0002.json
-[2026-08-07T22:28:49.165+00:00] [PASS] batch_trained branch=main step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
-[2026-08-07T22:28:49.593+00:00] [PASS] crash_simulated exit_code=86 checkpoint=main.step-0002.json expected_batch=batch-4f7891bdf6d93683c3a3
-[2026-08-07T22:28:49.596+00:00] [PASS] crash_worker_exit_verified exit_code=86
-[2026-08-07T22:28:49.759+00:00] [PASS] run_resumed checkpoint=main.step-0002.json next_step=3
-[2026-08-07T22:28:50.082+00:00] [PASS] resume_next_batch_matched step=3 batch_id=batch-4f7891bdf6d93683c3a3 hash=4f7891bdf6d93683c3a34295024c49fb61a820d063fee51f3d345614970e3709
-[2026-08-07T22:28:50.392+00:00] [PASS] checkpoint_saved branch=main next_step=4 hash=55919f76c313bc9410e18707e3166173d3fa0f031fb12c94360e2ecffc3cc925 path=checkpoints/main.step-0003.json
-[2026-08-07T22:28:50.392+00:00] [PASS] batch_trained branch=main step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
-[2026-08-07T22:28:51.013+00:00] [PASS] checkpoint_saved branch=main next_step=5 hash=59de17ae9b4fa189e4c419d7140899b4a0f51ff89345d36769224dd6b72791e1 path=checkpoints/main.step-0004.json
-[2026-08-07T22:28:51.014+00:00] [PASS] batch_trained branch=main step=4 batch_id=batch-41f0819b2eaadfcf4f61 loss=5.400148
-[2026-08-07T22:28:51.712+00:00] [PASS] checkpoint_saved branch=main next_step=6 hash=eb52b80139fca0bd9b3e4c682a8525190d78e9e95b6abd7c8d5688d8db7d389a path=checkpoints/main.step-0005.json
-[2026-08-07T22:28:51.713+00:00] [PASS] batch_trained branch=main step=5 batch_id=batch-1f0654be6610c2a16618 loss=5.406130
-[2026-08-07T22:28:51.714+00:00] [PASS] main_training_completed steps=6
-[2026-08-07T22:28:51.723+00:00] [PASS] batches_packed_and_training_resumed
-[2026-08-07T22:28:52.272+00:00] [PASS] batch_trained branch=replay step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
-[2026-08-07T22:28:52.795+00:00] [PASS] batch_trained branch=replay step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
-[2026-08-07T22:28:53.382+00:00] [PASS] batch_trained branch=replay step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
-[2026-08-07T22:28:53.878+00:00] [PASS] batch_trained branch=replay step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
-[2026-08-07T22:28:54.030+00:00] [PASS] checkpoint_saved branch=replay next_step=4 hash=dfa203f8464414b53f966bb3e34f2092bc8773c2db89005a7605b362ff81d6a1 path=checkpoints/replay.final.json
-[2026-08-07T22:28:54.031+00:00] [PASS] replay_hash_matched interval=[0, 3] batches=4
-[2026-08-07T22:28:54.038+00:00] [PASS] historical_stream_replayed
-[2026-08-07T22:28:54.359+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=1 hash=987d1d02780ebc0b45808a84650256c6a0b0d94a2b208bfb395cd252161b1e32 path=checkpoints/fork.bootstrap.json
-[2026-08-07T22:28:55.003+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=2 hash=c85d7fb4c5a2c2490faf90bf43af11ed244a226d06c322530b2d9624247131ab path=checkpoints/fork.step-0001.json
-[2026-08-07T22:28:55.004+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=1 batch_id=batch-ba39d87069961326d468 loss=5.537445
-[2026-08-07T22:28:55.689+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=3 hash=bcb084029d36dbc45a8d931f670d78f51fb38119e6e571e71ae5ab35d5005c5a path=checkpoints/fork.step-0002.json
-[2026-08-07T22:28:55.690+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=2 batch_id=batch-03b53a31610d6975a92b loss=5.504628
-[2026-08-07T22:28:55.693+00:00] [PASS] branch_forked branch=fork-temperature-mixture parent=main fork_step=1 diverged=True
-[2026-08-07T22:28:55.700+00:00] [PASS] branch_fork_execution_completed
-[2026-08-07T22:28:55.910+00:00] [PASS] audit_completed checks=10 hash=3eb62319c8633460d74524a2c6d67d8554426bf55427ac7a3336915a16c7ea1b
-[2026-08-07T22:28:55.911+00:00] [PASS] performance_measured utilization=0.757812 useful_tokens_per_second=229.77
-[2026-08-07T22:28:55.911+00:00] [PASS] evidence_generated hash=248a3b2eb611e553f8772b40293e6efc0203b408b8887cd91d949df136c35b1a
-[2026-08-07T22:28:55.911+00:00] [PASS] demo_completed
+[2026-08-07T23:17:25.655+00:00] [PASS] demo_started
+[2026-08-07T23:17:25.821+00:00] [PASS] documents_cleaned count=82 source_bytes=13343489 hash=429dde85800bf0876e7f003821a3d4d97c518348655b565ebb36820a6dd4797e
+[2026-08-07T23:17:25.832+00:00] [PASS] shards_created count=6 root_hash=eb1f61f8af4b3da2f2c3539c736a3199abdac6cf3cff0ae4ba6289f4e9579411
+[2026-08-07T23:17:25.840+00:00] [PASS] tokenizer_hash_verified hash=d31b8d7388ceae80ac5fda507c2e58ed60f5c9955fd4c2c05832b2970907f147
+[2026-08-07T23:17:25.840+00:00] [PASS] manifests_validated count=6
+[2026-08-07T23:17:25.841+00:00] [PASS] eval_shard_blocked shard=eval-general-document-df5b7a3965aacb15
+[2026-08-07T23:17:25.841+00:00] [PASS] validation_and_proxy_shards_blocked
+[2026-08-07T23:17:25.843+00:00] [PASS] mixture_compiled stages=2 hash=f4a7e67fcc79265c512a6a79326dfa3aa1e247ea8a59c60807383a964b100e03
+[2026-08-07T23:17:25.953+00:00] [PASS] bootstrap_checkpoint_saved branch=main next_step=0 hash=7b76f76a94a55c426ca0242528d81c75af32194cab82dd97dfac5f4b6c8d0652 path=checkpoints/main.bootstrap.json
+[2026-08-07T23:17:25.953+00:00] [PASS] training_started branch=main
+[2026-08-07T23:17:26.292+00:00] [PASS] batches_packed step=0 candidates=6
+[2026-08-07T23:17:26.293+00:00] [PASS] opus_decisions_recorded step=0 dispositions=accepted,deferred
+[2026-08-07T23:17:26.565+00:00] [PASS] checkpoint_saved branch=main next_step=1 hash=d3a99da9598cac6ba737bd727ab954fccbf019856c4ef6447f918227320498a7 path=checkpoints/main.step-0000.json
+[2026-08-07T23:17:26.566+00:00] [PASS] batch_trained branch=main step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
+[2026-08-07T23:17:26.928+00:00] [PASS] batches_packed step=1 candidates=6
+[2026-08-07T23:17:26.929+00:00] [PASS] opus_decisions_recorded step=1 dispositions=accepted,deferred,rejected
+[2026-08-07T23:17:27.278+00:00] [PASS] checkpoint_saved branch=main next_step=2 hash=0bba0a7d088e80b4ced5de6737a33f7c6203c91b66cdf6718aaa1720da98b355 path=checkpoints/main.step-0001.json
+[2026-08-07T23:17:27.278+00:00] [PASS] batch_trained branch=main step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
+[2026-08-07T23:17:27.687+00:00] [PASS] batches_packed step=2 candidates=6
+[2026-08-07T23:17:27.688+00:00] [PASS] opus_decisions_recorded step=2 dispositions=accepted,deferred,protected_floor_override,rejected
+[2026-08-07T23:17:28.068+00:00] [PASS] checkpoint_saved branch=main next_step=3 hash=c235198b2aed5217f540677c1115e62642912c347304688296be530b09455e26 path=checkpoints/main.step-0002.json
+[2026-08-07T23:17:28.069+00:00] [PASS] batch_trained branch=main step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
+[2026-08-07T23:17:28.490+00:00] [PASS] crash_simulated exit_code=86 checkpoint=main.step-0002.json expected_batch=batch-4f7891bdf6d93683c3a3
+[2026-08-07T23:17:28.492+00:00] [PASS] crash_worker_exit_verified exit_code=86
+[2026-08-07T23:17:28.653+00:00] [PASS] run_resumed checkpoint=main.step-0002.json next_step=3
+[2026-08-07T23:17:28.975+00:00] [PASS] resume_next_batch_matched step=3 batch_id=batch-4f7891bdf6d93683c3a3 hash=4f7891bdf6d93683c3a34295024c49fb61a820d063fee51f3d345614970e3709
+[2026-08-07T23:17:29.337+00:00] [PASS] checkpoint_saved branch=main next_step=4 hash=d87af8f8cbf7c4d9f593a90175de209ba7c87f67ecf46ac1b1481ff242d1f57c path=checkpoints/main.step-0003.json
+[2026-08-07T23:17:29.337+00:00] [PASS] batch_trained branch=main step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
+[2026-08-07T23:17:29.951+00:00] [PASS] checkpoint_saved branch=main next_step=5 hash=a25b0bbed7c4650cd2069f08cdd22a4f47337b3949687e40004ca1c04c97ff03 path=checkpoints/main.step-0004.json
+[2026-08-07T23:17:29.952+00:00] [PASS] batch_trained branch=main step=4 batch_id=batch-41f0819b2eaadfcf4f61 loss=5.400148
+[2026-08-07T23:17:30.601+00:00] [PASS] checkpoint_saved branch=main next_step=6 hash=da723beed8cf54a725bbc9bedf5e61f83b4b4acaaf8d9f1269666094ba311c45 path=checkpoints/main.step-0005.json
+[2026-08-07T23:17:30.601+00:00] [PASS] batch_trained branch=main step=5 batch_id=batch-1f0654be6610c2a16618 loss=5.406130
+[2026-08-07T23:17:30.603+00:00] [PASS] main_training_completed steps=6
+[2026-08-07T23:17:30.611+00:00] [PASS] batches_packed_and_training_resumed
+[2026-08-07T23:17:31.145+00:00] [PASS] batch_trained branch=replay step=0 batch_id=batch-fe44a7ab44b4570215fc loss=5.568345
+[2026-08-07T23:17:31.697+00:00] [PASS] batch_trained branch=replay step=1 batch_id=batch-d543eeb8de8a61501e0e loss=5.536072
+[2026-08-07T23:17:32.292+00:00] [PASS] batch_trained branch=replay step=2 batch_id=batch-8c5f6f4e9548097eae89 loss=5.496366
+[2026-08-07T23:17:32.788+00:00] [PASS] batch_trained branch=replay step=3 batch_id=batch-4f7891bdf6d93683c3a3 loss=5.456582
+[2026-08-07T23:17:32.936+00:00] [PASS] checkpoint_saved branch=replay next_step=4 hash=6c08119999018d673528af74d6d255bbbeecb554f35165e57730341cd0e77e4d path=checkpoints/replay.final.json
+[2026-08-07T23:17:32.938+00:00] [PASS] replay_hash_matched interval=[0, 3] batches=4
+[2026-08-07T23:17:32.944+00:00] [PASS] historical_stream_replayed
+[2026-08-07T23:17:33.258+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=1 hash=57917f042f03bf811c4f6e3080943cd52314a86ae47e817f9eca43f4a56aaaa8 path=checkpoints/fork.bootstrap.json
+[2026-08-07T23:17:33.923+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=2 hash=5cb0f85b0f44880c5c6bdc615c057268122f6080b82fb5db1fc3ea0363ac32ee path=checkpoints/fork.step-0001.json
+[2026-08-07T23:17:33.924+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=1 batch_id=batch-ba39d87069961326d468 loss=5.537445
+[2026-08-07T23:17:34.597+00:00] [PASS] checkpoint_saved branch=fork-temperature-mixture next_step=3 hash=793da2bb89b84f98c79341b3de4efe6666c57762b3e041c5e2ec4b9bd14df431 path=checkpoints/fork.step-0002.json
+[2026-08-07T23:17:34.598+00:00] [PASS] batch_trained branch=fork-temperature-mixture step=2 batch_id=batch-03b53a31610d6975a92b loss=5.504628
+[2026-08-07T23:17:34.601+00:00] [PASS] branch_forked branch=fork-temperature-mixture parent=main fork_step=1 diverged=True
+[2026-08-07T23:17:34.607+00:00] [PASS] branch_fork_execution_completed
+[2026-08-07T23:17:34.862+00:00] [PASS] audit_completed checks=10 hash=4ea3d803e98d89a29845760f822750af447d8f2c546bde9090f7dc0eb8f07441
+[2026-08-07T23:17:34.863+00:00] [PASS] performance_measured utilization=0.757812 useful_tokens_per_second=227.88
+[2026-08-07T23:17:34.863+00:00] [PASS] evidence_generated hash=f900f7ad89a177195ac7b21735a7f44e0d0e45f0743471d26c2052e8a5e66b22
+[2026-08-07T23:17:34.863+00:00] [PASS] demo_completed

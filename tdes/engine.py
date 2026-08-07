@@ -183,8 +183,13 @@ class TrainingEngine:
     def save_checkpoint(self, filename: str, reason: str) -> dict[str, Any]:
         path = self.artifacts / "checkpoints" / filename
         document = write_checkpoint(path, self.checkpoint_payload(reason))
+        marker = (
+            "bootstrap_checkpoint_saved"
+            if reason == "bootstrap"
+            else "checkpoint_saved"
+        )
         self.logger.log(
-            f"[PASS] checkpoint_saved branch={self.branch_id} next_step={self.next_step} "
+            f"[PASS] {marker} branch={self.branch_id} next_step={self.next_step} "
             f"hash={document['checkpoint_hash']} path=checkpoints/{filename}"
         )
         return {**document, "path": path}

@@ -6,6 +6,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from tdes.canonical import hash_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +28,21 @@ class EndToEndDemoTests(unittest.TestCase):
         self.assertEqual(evidence["overall_result"], "PASS")
         self.assertTrue(audit["overall_passed"])
         self.assertTrue(all(item["passed"] for item in audit["checks"].values()))
+        mixture = json.loads(
+            (artifacts / "reports" / "mixture_compliance.json").read_text()
+        )
+        mixture_body = {
+            key: value
+            for key, value in mixture.items()
+            if key != "mixture_compliance_hash"
+        }
+        self.assertEqual(
+            mixture["mixture_compliance_hash"], hash_object(mixture_body)
+        )
+        for stage in mixture["stages"].values():
+            self.assertEqual(
+                stage["planned_candidate_counts"], stage["actual_candidate_counts"]
+            )
         log = (artifacts / "run.log").read_text()
         for marker in (
             "[PASS] checkpoint_saved",
@@ -35,6 +52,23 @@ class EndToEndDemoTests(unittest.TestCase):
             "[PASS] branch_forked",
         ):
             self.assertIn(marker, log)
+        ordered_markers = (
+            "[PASS] shards_created",
+            "[PASS] manifests_validated",
+            "[PASS] eval_shard_blocked",
+            "[PASS] mixture_compiled",
+            "[PASS] batches_packed",
+            "[PASS] opus_decisions_recorded",
+            "[PASS] checkpoint_saved",
+            "[PASS] crash_simulated",
+            "[PASS] run_resumed",
+            "[PASS] replay_hash_matched",
+            "[PASS] branch_forked",
+            "[PASS] audit_completed",
+            "[PASS] performance_measured",
+        )
+        positions = [log.index(marker) for marker in ordered_markers]
+        self.assertEqual(positions, sorted(positions))
 
 
 if __name__ == "__main__":

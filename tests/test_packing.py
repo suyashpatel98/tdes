@@ -53,6 +53,22 @@ class PackingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_packed(changed, self.fixture.tokenizer)
 
+    def test_position_id_tampering_fails(self) -> None:
+        candidate = self.pack("code")
+        changed = copy.deepcopy(candidate)
+        changed["position_ids"][2] = changed["position_ids"][1]
+        with self.assertRaisesRegex(ValueError, "position IDs"):
+            validate_packed(changed, self.fixture.tokenizer)
+
+    def test_prompt_loss_mask_tampering_fails(self) -> None:
+        candidate = self.pack("instruction")
+        changed = copy.deepcopy(candidate)
+        prompt = changed["source_spans"][0]["field_spans"][0]
+        changed["loss_mask"][prompt["packed_start"]] = 1
+        changed["loss_bearing_tokens"] += 1
+        with self.assertRaisesRegex(ValueError, "data-type policy"):
+            validate_packed(changed, self.fixture.tokenizer)
+
 
 if __name__ == "__main__":
     unittest.main()

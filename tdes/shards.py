@@ -137,6 +137,16 @@ class ShardRepository:
             raise IntegrityError("root manifest hash mismatch")
         if self.root["tokenizer_hash"] != self.tokenizer.tokenizer_hash:
             raise IntegrityError("root tokenizer hash mismatch")
+        tokenizer_artifact = read_json(self.artifacts / "manifests" / "tokenizer.json")
+        if hash_object(tokenizer_artifact.get("spec")) != tokenizer_artifact.get(
+            "tokenizer_hash"
+        ):
+            raise IntegrityError("tokenizer artifact hash mismatch")
+        if tokenizer_artifact != self.tokenizer.artifact():
+            raise IntegrityError("tokenizer artifact does not match runtime tokenizer")
+
+        seen_shards: set[str] = set()
+        seen_records: set[str] = set()
         for summary in self.root["manifests"]:
             path = self.artifacts / summary["manifest_path"]
             manifest = read_json(path)
@@ -145,11 +155,31 @@ class ShardRepository:
                 raise IntegrityError(f"manifest hash mismatch: {path}")
             if manifest["manifest_hash"] != summary["manifest_hash"]:
                 raise IntegrityError(f"root/manifest mismatch: {path}")
+            if manifest["shard_id"] != summary["shard_id"]:
+                raise IntegrityError(f"root/shard ID mismatch: {path}")
+            if manifest["shard_id"] in seen_shards:
+                raise IntegrityError(f"duplicate shard ID: {manifest['shard_id']}")
+            seen_shards.add(manifest["shard_id"])
             if manifest["tokenizer_hash"] != self.tokenizer.tokenizer_hash:
                 raise IntegrityError(f"tokenizer mismatch: {path}")
+            role = manifest.get("role")
+            if role not in ROLE_USES or manifest.get("allowed_uses") != ROLE_USES[role]:
+                raise IntegrityError(f"invalid role/use policy: {path}")
+            expected_shard_id = (
+                f"{role}-{manifest['lane']}-{manifest['data_type']}-"
+                f"{manifest['shard_sha256'][:16]}"
+            )
+            if manifest["shard_id"] != expected_shard_id:
+                raise IntegrityError(f"shard ID is not content addressed: {path}")
             shard_path = self.artifacts / manifest["shard_path"]
+            if shard_path.name != f"{manifest['shard_id']}.jsonl":
+                raise IntegrityError(f"shard path does not match shard ID: {shard_path}")
             if sha256_file(shard_path) != manifest["shard_sha256"]:
                 raise IntegrityError(f"shard hash mismatch: {shard_path}")
+            if shard_path.stat().st_size != manifest["shard_bytes"]:
+                raise IntegrityError(f"shard byte count mismatch: {shard_path}")
+            if shard_path.stat().st_mode & 0o222:
+                raise IntegrityError(f"immutable shard is writable: {shard_path}")
             rows: list[dict[str, Any]] = []
             with shard_path.open("r", encoding="utf-8") as handle:
                 for line in handle:
@@ -159,9 +189,31 @@ class ShardRepository:
                     }
                     if hash_object(row_body) != row["token_record_hash"]:
                         raise IntegrityError(f"record hash mismatch: {row['record_id']}")
+                    if row["record_id"] in seen_records:
+                        raise IntegrityError(f"duplicate record ID: {row['record_id']}")
+                    seen_records.add(row["record_id"])
+                    for field in ("role", "lane", "data_type"):
+                        if row[field] != manifest[field]:
+                            raise IntegrityError(
+                                f"record/manifest {field} mismatch: {row['record_id']}"
+                            )
                     rows.append(row)
+            if len(rows) != manifest["record_count"]:
+                raise IntegrityError(f"record count mismatch: {shard_path}")
             if [row["record_id"] for row in rows] != manifest["record_ids"]:
                 raise IntegrityError(f"record ordering mismatch: {shard_path}")
+            if [row["token_record_hash"] for row in rows] != manifest["record_hashes"]:
+                raise IntegrityError(f"record hash list mismatch: {shard_path}")
+            token_count = sum(
+                len(tokens) for row in rows for tokens in row["token_fields"].values()
+            )
+            if token_count != manifest["token_count"]:
+                raise IntegrityError(f"token count mismatch: {shard_path}")
+            source_aggregate_hash = hash_object(
+                [row["source_content_hash"] for row in rows]
+            )
+            if source_aggregate_hash != manifest["source_aggregate_hash"]:
+                raise IntegrityError(f"source aggregate hash mismatch: {shard_path}")
             self.manifests.append(manifest)
             self.records_by_shard[manifest["shard_id"]] = rows
 

@@ -7,7 +7,7 @@ Overall result: **PASS**
 | Tokenizer integrity | PASS | `manifests/tokenizer.json`, `manifests/root.json`, `reports/source_report.json` |
 | Evaluation firewall | PASS | `reports/firewall.json`, `ledgers/main.consumption.jsonl`, `ledgers/main.opus.jsonl` |
 | Packing correctness | PASS | `batches/`, `ledgers/main.consumption.jsonl` |
-| Mixture compliance | PASS | `reports/mixture_plan.json`, `ledgers/main.consumption.jsonl` |
+| Mixture compliance | PASS | `reports/mixture_plan.json`, `reports/mixture_compliance.json`, `ledgers/main.consumption.jsonl`, `ledgers/main.opus.jsonl` |
 | OPUS audit trail | PASS | `ledgers/main.opus.jsonl`, `reports/mixture_plan.json` |
 | Crash recovery | PASS | `checkpoints/main.step-0002.json`, `reports/crash_expectation.json`, `ledgers/main.consumption.jsonl` |
 | Replay | PASS | `reports/replay.json`, `ledgers/replay.consumption.jsonl` |

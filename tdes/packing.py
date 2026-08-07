@@ -252,39 +252,126 @@ def validate_packed(candidate: dict[str, Any], tokenizer: FrozenByteTokenizer) -
     ):
         raise ValueError("attention mask shape mismatch")
     pad = tokenizer.special("PAD")
+    non_padding = 0
+    segment_count = 0
+    padding_started = False
     for row_index in range(length):
         segment = candidate["segment_ids"][row_index]
+        if candidate["loss_mask"][row_index] not in (0, 1):
+            raise ValueError("loss mask is not binary")
+        if any(value not in (0, 1) for value in candidate["attention_mask"][row_index]):
+            raise ValueError("attention mask is not binary")
         if segment < 0:
-            if candidate["input_ids"][row_index] != pad:
+            padding_started = True
+            if segment != -1 or candidate["input_ids"][row_index] != pad:
                 raise ValueError("non-pad token outside a segment")
-            if candidate["loss_mask"][row_index] != 0 or any(
-                candidate["attention_mask"][row_index]
+            if (
+                candidate["labels"][row_index] != pad
+                or candidate["position_ids"][row_index] != 0
+                or candidate["loss_mask"][row_index] != 0
+                or any(candidate["attention_mask"][row_index])
             ):
                 raise ValueError("padding contributes attention or loss")
             continue
+        if padding_started:
+            raise ValueError("non-padding token follows padding")
+        non_padding += 1
+        if not 0 <= candidate["input_ids"][row_index] < tokenizer.vocab_size:
+            raise ValueError("input token is outside tokenizer vocabulary")
+        if not 0 <= candidate["labels"][row_index] < tokenizer.vocab_size:
+            raise ValueError("label is outside tokenizer vocabulary")
+        if row_index == 0 or candidate["segment_ids"][row_index - 1] != segment:
+            if segment != segment_count or candidate["position_ids"][row_index] != 0:
+                raise ValueError("segment IDs or restarted positions are not contiguous")
+            segment_count += 1
+        elif candidate["position_ids"][row_index] != (
+            candidate["position_ids"][row_index - 1] + 1
+        ):
+            raise ValueError("position IDs are not contiguous inside a segment")
         for column, allowed in enumerate(candidate["attention_mask"][row_index]):
             expected = int(
                 candidate["segment_ids"][column] == segment
-                and candidate["position_ids"][column]
-                <= candidate["position_ids"][row_index]
+                and column <= row_index
                 and candidate["segment_ids"][column] >= 0
             )
             if allowed != expected:
                 raise ValueError("attention mask violates block-causal policy")
-        if candidate["loss_mask"][row_index]:
-            next_index = row_index + 1
-            if (
-                next_index >= length
-                or candidate["segment_ids"][next_index] != segment
-                or candidate["labels"][row_index] != candidate["input_ids"][next_index]
-            ):
-                raise ValueError("loss target crosses a segment boundary")
+        next_index = row_index + 1
+        inside_segment = (
+            next_index < length
+            and candidate["segment_ids"][next_index] == segment
+        )
+        expected_label = candidate["input_ids"][next_index] if inside_segment else pad
+        if candidate["labels"][row_index] != expected_label:
+            raise ValueError("label is not the within-segment next token")
+    if non_padding != candidate["non_padding_tokens"]:
+        raise ValueError("non-padding token count mismatch")
+    if len(candidate["source_spans"]) != segment_count:
+        raise ValueError("source span count does not match packed segments")
     if sum(candidate["loss_mask"]) != candidate["loss_bearing_tokens"]:
         raise ValueError("loss token count mismatch")
-    for span in candidate["source_spans"]:
+    cursor = 0
+    for segment_id, span in enumerate(candidate["source_spans"]):
         body = {key: value for key, value in span.items() if key != "span_hash"}
         if hash_object(body) != span["span_hash"]:
             raise ValueError("source span hash mismatch")
+        start = span["packed_start"]
+        end = span["packed_end"]
+        if start != cursor or not start < end <= non_padding:
+            raise ValueError("source spans are not an ordered partition")
+        if any(candidate["segment_ids"][index] != segment_id for index in range(start, end)):
+            raise ValueError("source span does not match segment IDs")
+        if candidate["input_ids"][start] != tokenizer.special("BOS"):
+            raise ValueError("packed segment is missing BOS")
+        if candidate["input_ids"][end - 1] != tokenizer.special("EOS"):
+            raise ValueError("packed segment is missing EOS")
+        for field in span["field_spans"]:
+            if not start <= field["packed_start"] <= field["packed_end"] <= end:
+                raise ValueError("field span is outside its packed segment")
+            if field["packed_start"] != start + field["segment_start"] or field[
+                "packed_end"
+            ] != start + field["segment_end"]:
+                raise ValueError("field packed and segment offsets disagree")
+            if field["source_end"] - field["source_start"] != field[
+                "packed_end"
+            ] - field["packed_start"]:
+                raise ValueError("field source and packed lengths disagree")
+
+        fields = {field["field"]: field for field in span["field_spans"]}
+        if span["data_type"] == "document":
+            if set(fields) != {"text"}:
+                raise ValueError("document packing has invalid fields")
+            text = fields["text"]
+            if text["packed_start"] != start + 1 or text["packed_end"] != end - 1:
+                raise ValueError("document field does not fill the segment body")
+            expected_loss_positions = set(range(start, end - 1))
+        elif span["data_type"] == "prompt_completion":
+            if set(fields) != {"prompt", "response"}:
+                raise ValueError("prompt-completion packing has invalid fields")
+            prompt = fields["prompt"]
+            response = fields["response"]
+            if (
+                prompt["packed_start"] != start + 2
+                or response["packed_start"] != prompt["packed_end"] + 1
+                or response["packed_end"] != end - 1
+                or candidate["input_ids"][start + 1] != tokenizer.special("PROMPT")
+                or candidate["input_ids"][response["packed_start"] - 1]
+                != tokenizer.special("RESPONSE")
+            ):
+                raise ValueError("prompt-completion markers or fields are malformed")
+            expected_loss_positions = set(
+                range(response["packed_start"] - 1, response["packed_end"])
+            )
+        else:
+            raise ValueError(f"unknown packed data type: {span['data_type']}")
+        for index in range(start, end):
+            if candidate["loss_mask"][index] != int(index in expected_loss_positions):
+                raise ValueError("loss mask violates the data-type policy")
+        if span["loss_bearing_tokens"] != len(expected_loss_positions):
+            raise ValueError("source span loss token count mismatch")
+        cursor = end
+    if cursor != non_padding:
+        raise ValueError("source spans do not cover all non-padding tokens")
 
 
 def candidate_semantic_hash(candidate: dict[str, Any]) -> str:

@@ -87,14 +87,25 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
 
     def tokenizer_and_shards() -> dict[str, Any]:
         artifact = read_json(artifacts / "manifests" / "tokenizer.json")
+        if hash_object(artifact["spec"]) != artifact["tokenizer_hash"]:
+            raise ValueError("tokenizer artifact does not hash its own specification")
         if artifact["tokenizer_hash"] != tokenizer.tokenizer_hash:
             raise ValueError("tokenizer artifact hash mismatch")
         regenerated, source_report = build_documents(root, config)
         generated = read_jsonl(artifacts / "reports" / "documents.jsonl")
         if regenerated != generated:
             raise ValueError("generated documents do not reproduce from raw sources")
+        if read_json(artifacts / "reports" / "source_report.json") != source_report:
+            raise ValueError("persisted source report does not reproduce from raw sources")
         repository = ShardRepository(artifacts, tokenizer)
         document_by_id = {row["record_id"]: row for row in generated}
+        record_ids = {
+            record["record_id"]
+            for records in repository.records_by_shard.values()
+            for record in records
+        }
+        if record_ids != set(document_by_id):
+            raise ValueError("tokenized record IDs do not match cleaned document IDs")
         retokenized = 0
         for records in repository.records_by_shard.values():
             for record in records:
@@ -104,6 +115,21 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
                 }
                 if expected != record["token_fields"]:
                     raise ValueError(f"retokenization mismatch: {record['record_id']}")
+                metadata_fields = {
+                    "role": "role",
+                    "lane": "lane",
+                    "data_type": "data_type",
+                    "source_content_hash": "content_hash",
+                    "source_id": "source_id",
+                    "source_index": "source_index",
+                    "metadata": "metadata",
+                }
+                for record_field, document_field in metadata_fields.items():
+                    if record[record_field] != document[document_field]:
+                        raise ValueError(
+                            f"tokenized metadata mismatch for {record_field}: "
+                            f"{record['record_id']}"
+                        )
                 retokenized += 1
         return {
             "tokenizer_hash": tokenizer.tokenizer_hash,
@@ -115,8 +141,19 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
 
     def firewall() -> dict[str, Any]:
         report = read_json(artifacts / "reports" / "firewall.json")
+        report_body = {
+            key: value for key, value in report.items() if key != "firewall_report_hash"
+        }
+        if hash_object(report_body) != report["firewall_report_hash"]:
+            raise ValueError("firewall report hash mismatch")
         if not report["all_blocked"]:
             raise ValueError("one or more firewall probes were admitted")
+        attempts = {item["role"]: item for item in report["attempts"]}
+        if set(attempts) != {"eval", "validation", "proxy"} or any(
+            not item["blocked"] or item["requested_use"] != "train"
+            for item in attempts.values()
+        ):
+            raise ValueError("firewall probes do not cover every non-training role")
         repository = ShardRepository(artifacts, tokenizer)
         roles = {manifest["shard_id"]: manifest["role"] for manifest in repository.manifests}
         consumed = read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
@@ -208,7 +245,15 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             if row["branch_id"] == "main"
         ]
         consumption = read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
-        actual_shares: dict[str, int] = Counter()
+        consumption_by_step = {row["step"]: row for row in consumption}
+        plan_steps = {row["step"] for row in plan["steps"]}
+        if {row["step"] for row in opus_rows} != plan_steps:
+            raise ValueError("OPUS decision steps do not match mixture plan")
+        if set(consumption_by_step) != plan_steps:
+            raise ValueError("consumption steps do not match mixture plan")
+
+        stage_counters: dict[str, dict[str, Any]] = {}
+        protected_floor_misses: list[dict[str, Any]] = []
         for step_plan in plan["steps"]:
             step = step_plan["step"]
             candidates = Counter(row["lane"] for row in opus_rows if row["step"] == step)
@@ -216,17 +261,114 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
                 key: value for key, value in step_plan["candidate_quotas"].items() if value
             }:
                 raise ValueError(f"candidate quota mismatch at step {step}")
-            row = next(item for item in consumption if item["step"] == step)
+            row = consumption_by_step[step]
+            if row["stage"] != step_plan["stage"]:
+                raise ValueError(f"curriculum stage mismatch at step {step}")
             for lane, required in step_plan["required_selected"].items():
                 if row["selected_lane_counts"][lane] < required:
-                    raise ValueError(f"protected floor missed at step {step}")
-            actual_shares.update(row["selected_lane_counts"])
-        return {
+                    protected_floor_misses.append(
+                        {
+                            "step": step,
+                            "lane": lane,
+                            "required": required,
+                            "actual": row["selected_lane_counts"][lane],
+                        }
+                    )
+
+            stage = stage_counters.setdefault(
+                step_plan["stage"],
+                {
+                    "steps": 0,
+                    "planned_weights": step_plan["lane_weights"],
+                    "planned_candidates": Counter(),
+                    "actual_candidates": Counter(),
+                    "selected_candidates": Counter(),
+                    "selected_loss_bearing_tokens": Counter(),
+                },
+            )
+            if stage["planned_weights"] != step_plan["lane_weights"]:
+                raise ValueError(f"lane weights changed inside stage {step_plan['stage']}")
+            stage["steps"] += 1
+            stage["planned_candidates"].update(step_plan["candidate_quotas"])
+            stage["actual_candidates"].update(candidates)
+            stage["selected_candidates"].update(row["selected_lane_counts"])
+            stage["selected_loss_bearing_tokens"].update(
+                {
+                    lane: sum(
+                        span["loss_bearing_tokens"]
+                        for span in row["ordered_source_spans"]
+                        if span["lane"] == lane
+                    )
+                    for lane in step_plan["lane_weights"]
+                }
+            )
+
+        if protected_floor_misses:
+            raise ValueError(f"protected floor misses: {protected_floor_misses}")
+
+        def shares(counts: dict[str, int]) -> dict[str, float]:
+            total = sum(counts.values())
+            return {lane: value / total for lane, value in sorted(counts.items())}
+
+        stage_reports: dict[str, dict[str, Any]] = {}
+        aggregate = {
+            "planned_candidates": Counter(),
+            "actual_candidates": Counter(),
+            "selected_candidates": Counter(),
+            "selected_loss_bearing_tokens": Counter(),
+        }
+        for name, counters in stage_counters.items():
+            planned = dict(sorted(counters["planned_candidates"].items()))
+            actual = dict(sorted(counters["actual_candidates"].items()))
+            selected = dict(sorted(counters["selected_candidates"].items()))
+            selected_tokens = dict(
+                sorted(counters["selected_loss_bearing_tokens"].items())
+            )
+            if actual != planned:
+                raise ValueError(f"aggregate candidate mixture mismatch in stage {name}")
+            stage_reports[name] = {
+                "steps": counters["steps"],
+                "planned_lane_weights": counters["planned_weights"],
+                "planned_candidate_counts": planned,
+                "planned_candidate_shares": shares(planned),
+                "actual_candidate_counts": actual,
+                "actual_candidate_shares": shares(actual),
+                "selected_candidate_counts": selected,
+                "selected_candidate_shares": shares(selected),
+                "selected_loss_bearing_tokens": selected_tokens,
+                "selected_loss_bearing_token_shares": shares(selected_tokens),
+            }
+            for key in aggregate:
+                aggregate[key].update(counters[key])
+
+        planned = dict(sorted(aggregate["planned_candidates"].items()))
+        actual = dict(sorted(aggregate["actual_candidates"].items()))
+        selected = dict(sorted(aggregate["selected_candidates"].items()))
+        selected_tokens = dict(
+            sorted(aggregate["selected_loss_bearing_tokens"].items())
+        )
+        aggregate_report = {
+            "planned_candidate_counts": planned,
+            "planned_candidate_shares": shares(planned),
+            "actual_candidate_counts": actual,
+            "actual_candidate_shares": shares(actual),
+            "selected_candidate_counts": selected,
+            "selected_candidate_shares": shares(selected),
+            "selected_loss_bearing_tokens": selected_tokens,
+            "selected_loss_bearing_token_shares": shares(selected_tokens),
+        }
+
+        report_body = {
+            "schema_version": 1,
             "mixture_plan_hash": plan["mixture_plan_hash"],
             "steps_checked": len(plan["steps"]),
-            "actual_selected_counts": dict(actual_shares),
+            "stages": stage_reports,
+            "aggregate": aggregate_report,
             "protected_floor_misses": 0,
         }
+        report = {**report_body, "mixture_compliance_hash": hash_object(report_body)}
+        atomic_write_json(artifacts / "reports" / "mixture_compliance.json", report)
+        return report
 
     def opus() -> dict[str, Any]:
         rows = read_jsonl(artifacts / "ledgers" / "main.opus.jsonl")
@@ -251,6 +393,56 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             }
             if hash_object(decision_body) != row["decision_hash"]:
                 raise ValueError(f"OPUS decision hash mismatch at row {row['ledger_offset']}")
+        consumption = {
+            row["step"]: row
+            for row in read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
+        }
+        for step, consumed in consumption.items():
+            decisions = [row for row in rows if row["step"] == step]
+            decision_by_id = {row["candidate_id"]: row for row in decisions}
+            if len(decision_by_id) != len(decisions):
+                raise ValueError(f"duplicate OPUS candidate decision at step {step}")
+            selected_ids = {
+                row["candidate_id"] for row in decisions if row["final_selected"]
+            }
+            if selected_ids != set(consumed["candidate_ids"]):
+                raise ValueError(f"OPUS selections do not match batch at step {step}")
+            for candidate_id, packed_hash in zip(
+                consumed["candidate_ids"], consumed["candidate_hashes"]
+            ):
+                if decision_by_id[candidate_id]["packed_hash"] != packed_hash:
+                    raise ValueError(f"OPUS packed hash does not match batch at step {step}")
+            selected_span_hashes = Counter(
+                span_hash
+                for row in decisions
+                if row["final_selected"]
+                for span_hash in row["source_span_hashes"]
+            )
+            consumed_span_hashes = Counter(
+                span["span_hash"] for span in consumed["ordered_source_spans"]
+            )
+            if selected_span_hashes != consumed_span_hashes:
+                raise ValueError(f"OPUS source spans do not match batch at step {step}")
+            batch = read_json(artifacts / consumed["batch_path"])
+            result_hashes = {row["opus_result_hash"] for row in decisions}
+            if result_hashes != {batch["opus_result_hash"]}:
+                raise ValueError(f"OPUS result hash does not match batch at step {step}")
+            if any(
+                row["model_hash"] != consumed["model_before_hash"]
+                or row["optimizer_hash"] != consumed["optimizer_before_hash"]
+                or row["branch_id"] != "main"
+                for row in decisions
+            ):
+                raise ValueError(f"OPUS state identity mismatch at step {step}")
+            for row in decisions:
+                selected_disposition = row["disposition"] in {
+                    "accepted",
+                    "protected_floor_override",
+                }
+                if selected_disposition != row["final_selected"]:
+                    raise ValueError(
+                        f"OPUS disposition/final selection mismatch at step {step}"
+                    )
         probability_groups: dict[tuple[int, int], list[float]] = defaultdict(list)
         for row in rows:
             for trace in row["traces"]:
@@ -368,12 +560,51 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             raise ValueError("replay report failed integrity or equality")
         if not all(all(item["checks"].values()) for item in report["comparisons"]):
             raise ValueError("replay comparison contains a mismatch")
+        replay_ledgers = {}
         for name in ("consumption", "learning", "opus", "events"):
-            HashLedger(artifacts / "ledgers" / f"replay.{name}.jsonl", name)
+            replay_ledgers[name] = HashLedger(
+                artifacts / "ledgers" / f"replay.{name}.jsonl", name
+            )
+        main_by_step = {
+            row["step"]: row
+            for row in read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
+        }
+        replay_rows = replay_ledgers["consumption"].rows
+        comparison_by_step = {
+            row["step"]: row for row in report["comparisons"]
+        }
+        if not replay_rows or set(comparison_by_step) != {
+            row["step"] for row in replay_rows
+        }:
+            raise ValueError("replay report interval does not match replay ledger")
+        if report["interval"] != [replay_rows[0]["step"], replay_rows[-1]["step"]]:
+            raise ValueError("replay interval boundaries are incorrect")
+        replay_keys = (
+            "batch_id",
+            "batch_hash",
+            "candidate_ids",
+            "candidate_hashes",
+            "ordered_source_spans",
+        )
+        for replayed in replay_rows:
+            original = main_by_step[replayed["step"]]
+            if any(replayed[key] != original[key] for key in replay_keys):
+                raise ValueError(f"replay ledger mismatch at step {replayed['step']}")
+            comparison = comparison_by_step[replayed["step"]]
+            if (
+                comparison["original_batch_id"] != original["batch_id"]
+                or comparison["replay_batch_id"] != replayed["batch_id"]
+                or comparison["batch_hash"] != replayed["batch_hash"]
+                or comparison["source_span_hashes"]
+                != [span["span_hash"] for span in replayed["ordered_source_spans"]]
+            ):
+                raise ValueError(
+                    f"replay report does not describe its ledger at step {replayed['step']}"
+                )
         return {
             "checkpoint_hash": report["checkpoint_hash"],
             "interval": report["interval"],
-            "matched_batches": len(report["comparisons"]),
+            "matched_batches": len(replay_rows),
             "matched_span_hashes": sum(
                 len(item["source_span_hashes"]) for item in report["comparisons"]
             ),
@@ -388,10 +619,45 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             raise ValueError("fork did not preserve parent or explicitly diverge")
         if not report["branch"]["config_delta"]:
             raise ValueError("fork configuration delta is missing")
+        fork_ledgers = {}
         for name in ("consumption", "learning", "opus", "events"):
-            HashLedger(
+            fork_ledgers[name] = HashLedger(
                 artifacts / "ledgers" / f"fork-temperature-mixture.{name}.jsonl", name
             )
+        parent_hash = sha256_file(artifacts / "ledgers" / "main.consumption.jsonl")
+        if (
+            report["parent_consumption_hash_before"] != parent_hash
+            or report["parent_consumption_hash_after"] != parent_hash
+        ):
+            raise ValueError("fork report parent hashes do not match parent ledger")
+        parent_checkpoint = load_checkpoint(
+            artifacts / report["branch"]["parent_checkpoint_path"]
+        )
+        if parent_checkpoint["checkpoint_hash"] != report["branch"][
+            "parent_checkpoint_hash"
+        ]:
+            raise ValueError("fork parent checkpoint identity mismatch")
+        fork_rows = fork_ledgers["consumption"].rows
+        reported_batches = [
+            {
+                "step": row["step"],
+                "batch_id": row["batch_id"],
+                "batch_hash": row["batch_hash"],
+            }
+            for row in fork_rows
+        ]
+        if reported_batches != report["fork_batches"]:
+            raise ValueError("fork report does not match branch consumption ledger")
+        main_by_step = {
+            row["step"]: row
+            for row in read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
+        }
+        actual_divergence = any(
+            row["batch_hash"] != main_by_step[row["step"]]["batch_hash"]
+            for row in fork_rows
+        )
+        if not actual_divergence:
+            raise ValueError("fork ledger did not diverge from parent stream")
         return {
             "parent_checkpoint_hash": report["branch"]["parent_checkpoint_hash"],
             "fork_step": report["branch"]["fork_step"],
@@ -408,17 +674,62 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             raise ValueError("performance report hash mismatch")
         rows = read_jsonl(artifacts / "ledgers" / "main.consumption.jsonl")
         raw = report["raw"]
-        if raw["capacity_tokens"] != sum(row["capacity_tokens"] for row in rows):
-            raise ValueError("performance capacity cannot be reconstructed")
-        if raw["non_padding_tokens"] != sum(row["non_padding_tokens"] for row in rows):
-            raise ValueError("performance packed tokens cannot be reconstructed")
-        if raw["loss_bearing_tokens"] != sum(row["loss_bearing_tokens"] for row in rows):
-            raise ValueError("performance useful tokens cannot be reconstructed")
+        expected_stages: dict[str, dict[str, int]] = defaultdict(
+            lambda: {
+                "steps": 0,
+                "capacity_tokens": 0,
+                "non_padding_tokens": 0,
+                "loss_bearing_tokens": 0,
+            }
+        )
+        for row in rows:
+            stage = expected_stages[row["stage"]]
+            stage["steps"] += 1
+            stage["capacity_tokens"] += row["capacity_tokens"]
+            stage["non_padding_tokens"] += row["non_padding_tokens"]
+            stage["loss_bearing_tokens"] += row["loss_bearing_tokens"]
+        expected_raw = {
+            "steps": len(rows),
+            "capacity_tokens": sum(row["capacity_tokens"] for row in rows),
+            "non_padding_tokens": sum(row["non_padding_tokens"] for row in rows),
+            "loss_bearing_tokens": sum(row["loss_bearing_tokens"] for row in rows),
+            "duration_ns": {
+                "packing": sum(row["timing_ns"]["packing"] for row in rows),
+                "opus": sum(row["timing_ns"]["opus"] for row in rows),
+                "training": sum(row["timing_ns"]["training"] for row in rows),
+                "end_to_end": sum(
+                    row["timing_ns"]["prepare_total"]
+                    + row["timing_ns"]["training"]
+                    for row in rows
+                ),
+            },
+            "stages": dict(expected_stages),
+        }
+        if raw != expected_raw:
+            raise ValueError("performance raw measurements cannot be reconstructed")
+        durations = expected_raw["duration_ns"]
+        expected_derived = {
+            "packing_utilization": expected_raw["non_padding_tokens"]
+            / expected_raw["capacity_tokens"],
+            "useful_token_ratio": expected_raw["loss_bearing_tokens"]
+            / expected_raw["capacity_tokens"],
+            "packed_tokens_per_second": expected_raw["non_padding_tokens"]
+            / (durations["packing"] / 1e9),
+            "useful_loss_tokens_per_second": expected_raw["loss_bearing_tokens"]
+            / (durations["end_to_end"] / 1e9),
+            "training_loss_tokens_per_second": expected_raw["loss_bearing_tokens"]
+            / (durations["training"] / 1e9),
+            "opus_fraction_of_end_to_end": durations["opus"]
+            / durations["end_to_end"],
+        }
         derived = report["derived"]
-        if not 0 <= derived["packing_utilization"] <= 1:
-            raise ValueError("invalid packing utilization")
-        if any(value <= 0 for key, value in derived.items() if "per_second" in key):
-            raise ValueError("non-positive measured throughput")
+        if set(derived) != set(expected_derived) or any(
+            not math.isclose(
+                derived[key], expected, rel_tol=1e-12, abs_tol=1e-12
+            )
+            for key, expected in expected_derived.items()
+        ):
+            raise ValueError("performance derived metrics cannot be reconstructed")
         return {
             "performance_hash": report["performance_hash"],
             "raw": raw,
@@ -438,7 +749,13 @@ def audit_all(root: Path, artifacts: Path, config: dict[str, Any]) -> dict[str, 
             packing, ["batches/", "ledgers/main.consumption.jsonl"]
         ),
         "mixture_compliance": _capture(
-            mixture, ["reports/mixture_plan.json", "ledgers/main.consumption.jsonl"]
+            mixture,
+            [
+                "reports/mixture_plan.json",
+                "reports/mixture_compliance.json",
+                "ledgers/main.consumption.jsonl",
+                "ledgers/main.opus.jsonl",
+            ],
         ),
         "opus_audit_trail": _capture(
             opus, ["ledgers/main.opus.jsonl", "reports/mixture_plan.json"]

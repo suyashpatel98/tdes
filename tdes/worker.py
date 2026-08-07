@@ -53,6 +53,10 @@ def run_fresh(root: Path, artifacts: Path) -> None:
     last_checkpoint = None
     while engine.next_step <= crash_after:
         prepared = engine.prepare_step()
+        logger.log(
+            f"[PASS] batches_packed step={engine.next_step} "
+            f"candidates={len(prepared['candidates'])}"
+        )
         dispositions = sorted(
             {decision["disposition"] for decision in prepared["opus"]["decisions"]}
         )
