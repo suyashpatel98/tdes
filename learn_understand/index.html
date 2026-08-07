@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive guide to the Training Data Execution System V5.">
+  <title>TDEx V5 Learning Map</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Learning steps">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">T5</div>
+        <div>
+          <strong>TDEx V5</strong>
+          <span>Learning map</span>
+        </div>
+        <button class="icon-button sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation" title="Close navigation">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="progress-block">
+        <div class="progress-copy">
+          <span>Course progress</span>
+          <strong id="progressLabel">0 / 15</strong>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <label class="search-box" for="stageSearch">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <input id="stageSearch" type="search" placeholder="Find a concept" autocomplete="off">
+      </label>
+
+      <nav class="stage-nav" id="stageNav"></nav>
+
+      <div class="sidebar-status">
+        <i data-lucide="shield-check" aria-hidden="true"></i>
+        <div>
+          <strong>Generated run: PASS</strong>
+          <span>10 independent audit checks</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Open navigation" title="Open navigation">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="breadcrumb" aria-label="Current location">
+          <span>Training Data Execution System</span>
+          <i data-lucide="chevron-right" aria-hidden="true"></i>
+          <strong id="breadcrumbCurrent">Assignment</strong>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="collapseAll" type="button" aria-label="Collapse all details" title="Collapse all details">
+            <i data-lucide="fold-vertical"></i>
+          </button>
+          <button class="icon-button" id="expandAll" type="button" aria-label="Expand all details" title="Expand all details">
+            <i data-lucide="unfold-vertical"></i>
+          </button>
+        </div>
+      </header>
+
+      <section class="map-band" aria-labelledby="mapTitle">
+        <div class="section-kicker">
+          <span>System map</span>
+          <strong id="mapTitle">One data stream, fully provable</strong>
+        </div>
+        <div class="pipeline-scroll" id="pipelineMap"></div>
+      </section>
+
+      <article class="lesson" id="lesson" aria-live="polite">
+        <header class="lesson-header">
+          <div class="lesson-heading">
+            <div class="step-symbol" id="stepSymbol"><i data-lucide="clipboard-check"></i></div>
+            <div>
+              <div class="lesson-meta">
+                <span id="stepNumber">Step 1 of 15</span>
+                <span class="stage-category" id="stageCategory">Foundation</span>
+              </div>
+              <h1 id="stageTitle">The assignment</h1>
+              <p id="stageSummary"></p>
+            </div>
+          </div>
+          <button class="understood-button" id="understoodButton" type="button">
+            <i data-lucide="circle" aria-hidden="true"></i>
+            <span>Mark understood</span>
+          </button>
+        </header>
+
+        <section class="stage-overview" aria-label="Stage overview">
+          <div class="takeaway-block">
+            <span>Keep this in mind</span>
+            <p id="stageTakeaway"></p>
+          </div>
+          <div class="stage-flow" id="stageFlow"></div>
+        </section>
+
+        <section class="interactive-band" id="interactiveBand" hidden></section>
+
+        <section class="detail-band" aria-labelledby="detailsTitle">
+          <div class="detail-heading">
+            <div>
+              <span>Explore the layers</span>
+              <h2 id="detailsTitle">From intuition to implementation</h2>
+            </div>
+            <span class="depth-key"><b>01</b> idea &nbsp; <b>02</b> mechanics &nbsp; <b>03</b> proof</span>
+          </div>
+          <div class="concept-tree" id="conceptTree"></div>
+        </section>
+
+        <footer class="lesson-footer">
+          <button class="nav-command" id="previousStep" type="button">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+            <span>Previous</span>
+          </button>
+          <div class="lesson-position" id="lessonPosition">1 / 15</div>
+          <button class="nav-command primary" id="nextStep" type="button">
+            <span>Next step</span>
+            <i data-lucide="arrow-right" aria-hidden="true"></i>
+          </button>
+        </footer>
+      </article>
+    </main>
+  </div>
+
+  <script src="vendor/lucide.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
